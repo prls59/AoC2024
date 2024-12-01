@@ -10,7 +10,7 @@ Icon
 ._*
 
 # Advent of Code
-*.txt
+input.txt
 
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
