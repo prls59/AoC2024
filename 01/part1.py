@@ -1,11 +1,10 @@
 import os
 
 datafile = "input.txt"
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 loc_lists = [[],[]]
 
-with open(datafile) as input:
+with open(os.path.dirname(os.path.abspath(__file__)) + "/" + datafile) as input:
     for line in input:
         locs = line[0:-1].split()
         loc_lists[0].append(int(locs[0]))
