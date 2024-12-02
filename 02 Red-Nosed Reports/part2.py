@@ -31,14 +31,12 @@ with open(os.path.dirname(os.path.abspath(__file__)) + "/" + datafile) as input:
     for report in input:
         levels = [int(x) for x in report[0:-1].split()]
         bad = bad_level(levels)
-        if bad == NOT_FOUND:
-            # no problem dampener required
+        # check if safe, or safe without implicated level, or without the previous level
+        # or without the next...
+        if (bad == NOT_FOUND
+            or bad_level(levels[:bad]+levels[bad+1:]) == NOT_FOUND
+            or (bad > 0 and bad_level(levels[:bad-1]+levels[bad:]) == NOT_FOUND)
+            or (bad < len(levels) - 1 and bad_level(levels[:bad+1]+levels[bad+2:]) == NOT_FOUND)):
             safe_count += 1
-        else:
-            # try without implicated level, then without previous, then without the next
-            if (bad_level(levels[:bad]+levels[bad+1:]) == NOT_FOUND
-                or (bad > 0 and bad_level(levels[:bad-1]+levels[bad:]) == NOT_FOUND)
-                or (bad < len(levels) - 1 and bad_level(levels[:bad+1]+levels[bad+2:]) == NOT_FOUND)):
-                safe_count += 1
 
 print('Result = ', safe_count)
