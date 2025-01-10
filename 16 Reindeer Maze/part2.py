@@ -61,7 +61,7 @@ def dijkstra(maze, start_loc_head, end_loc):
         
         (curr_loc, curr_head) = curr_loc_head
         if curr_loc == end_loc:
-            break
+            continue
 
         next_loc_heads = available_locs(maze, curr_loc_head, end_loc)
         for next_loc_head in next_loc_heads:
@@ -76,10 +76,15 @@ def dijkstra(maze, start_loc_head, end_loc):
 
             if next_loc_head not in cost_dict or new_cost < cost_dict[next_loc_head]:
                 cost_dict[next_loc_head] = new_cost
+                from_dict[next_loc_head] = curr_loc_head
                 frontier.put((new_cost, next_loc_head))
+            elif new_cost == cost_dict[next_loc_head]:
                 from_dict[next_loc_head] = curr_loc_head
 
     return from_dict, cost_dict
+
+def find_spots(from_dict, cost_dict, best_spots, end_loc, cost):
+    
 
 maze = []
 with open(os.path.dirname(os.path.abspath(__file__)) + "/" + DATAFILE) as input:
@@ -93,13 +98,14 @@ end_loc = (len(maze[0]) - 2, 1)
 
 from_dict, cost_dict = dijkstra(maze, start_loc_head, end_loc)
 
-shortest = -1
-end = ()
+cost = -1
 for loc_head in cost_dict.keys():
     (loc, _) = loc_head
     if loc == end_loc:
-        if shortest == -1 or cost_dict[loc_head] < shortest:
-            shortest = cost_dict[loc_head]
-            end = loc_head
+        if cost == -1 or cost_dict[loc_head] < cost:
+            cost = cost_dict[loc_head]
 
-print('Result = ', shortest)
+best_spots = set()
+find_spots(from_dict, cost_dict, best_spots, end_loc, cost)
+
+print('Result = ', len(best_spots))
