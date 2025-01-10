@@ -12,39 +12,17 @@ WALL = '#'
 STEP_COST = 1
 TURN_COST = 1000
 
-def next_poi(maze, loc_head, end_loc):
-    ((x,y), head) = loc_head
-    left = (head + 3) % 4
-    right = (head + 1) % 4
-    
-    while True:
-        x = x + STEP[head][0]
-        y = y + STEP[head][1]
-        # Stop if blocked, junction or end reached
-        if ((x, y) == end_loc
-            or maze[y + STEP[head][1]][x + STEP[head][0]] == WALL
-            or maze[y + STEP[left][1]][x + STEP[left][0]] != WALL
-            or maze[y + STEP[right][1]][x + STEP[right][0]] != WALL):
-            break
-
-    return ((x, y), head)
-
 def available_locs(maze, curr_loc_head, end_loc):
     steps = []
     (curr_loc, curr_head) = curr_loc_head
 
     head = (curr_head + 3) % 4
 
-    dead_end = True
     for n in range(3):
-        if maze[curr_loc[1] + STEP[head][1]][curr_loc[0] + STEP[head][0]] != WALL:
-            dead_end = False
-            steps.append((next_poi(maze, (curr_loc, head), end_loc)))
+        next_loc = (curr_loc[0] + STEP[head][0], curr_loc[1] + STEP[head][1])
+        if maze[next_loc[1]][next_loc[0]] != WALL:
+            steps.append((next_loc, head))
         head = (head + 1) % 4
-
-    if dead_end:
-        head = (curr_head + 2) % 4
-        steps.append((next_poi(maze, (curr_loc, head), end_loc)))
 
     return steps
 
@@ -83,9 +61,6 @@ def dijkstra(maze, start_loc_head, end_loc):
 
     return from_dict, cost_dict
 
-def find_spots(from_dict, cost_dict, best_spots, end_loc, cost):
-    
-
 maze = []
 with open(os.path.dirname(os.path.abspath(__file__)) + "/" + DATAFILE) as input:
     data = input.read()
@@ -93,19 +68,57 @@ rows = data[:-1].split("\n")
 for row in rows:
     maze.append([x for x in row])
 
-start_loc_head = ((1, len(maze) - 2), 1)
+start_loc = (1, len(maze) - 2)
+start_loc_head = (start_loc, 1)
 end_loc = (len(maze[0]) - 2, 1)
 
 from_dict, cost_dict = dijkstra(maze, start_loc_head, end_loc)
 
-cost = -1
+min_cost = -1
 for loc_head in cost_dict.keys():
     (loc, _) = loc_head
     if loc == end_loc:
-        if cost == -1 or cost_dict[loc_head] < cost:
-            cost = cost_dict[loc_head]
+        if min_cost == -1 or cost_dict[loc_head] < min_cost:
+            min_cost = cost_dict[loc_head]
 
 best_spots = set()
-find_spots(from_dict, cost_dict, best_spots, end_loc, cost)
+best_spots.add(start_loc)
+best_spots.add(end_loc)
+
+backwards = queue.Queue()
+for loc_head in cost_dict.keys():
+    (loc, _) = loc_head
+    if loc == end_loc and cost_dict[loc_head] == min_cost:
+        backwards.put((loc_head, min_cost))
+    
+while not backwards.empty():
+    (dest_loc_head, dest_cost) = backwards.get()
+    (dest_loc, dest_head) = dest_loc_head
+
+    prev_loc = (dest_loc[0] - STEP[dest_head][0], dest_loc[1] - STEP[dest_head][1])
+    if prev_loc == start_loc:
+        continue
+
+    on_best_path = False
+    prev_loc_head = (prev_loc, dest_head)
+    if prev_loc_head in cost_dict and dest_cost == cost_dict[prev_loc_head] + STEP_COST:
+        backwards.put((prev_loc_head, cost_dict[prev_loc_head]))
+        on_best_path = True
+
+    prev_loc_head = (prev_loc, (dest_head + 1) % 4)
+    if prev_loc_head in cost_dict and dest_cost == cost_dict[prev_loc_head] + TURN_COST + STEP_COST:
+        backwards.put((prev_loc_head, cost_dict[prev_loc_head]))
+        on_best_path = True
+
+    prev_loc_head = (prev_loc, (dest_head + 3) % 4)
+    if prev_loc_head in cost_dict and dest_cost == cost_dict[prev_loc_head] + TURN_COST + STEP_COST:
+        backwards.put((prev_loc_head, cost_dict[prev_loc_head]))
+        on_best_path = True
+
+    if on_best_path:
+        loc = prev_loc
+        while loc != dest_loc:
+            best_spots.add(loc)
+            loc = (loc[0] + STEP[dest_head][0], loc[1] + STEP[dest_head][1])
 
 print('Result = ', len(best_spots))
